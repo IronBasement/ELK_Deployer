@@ -1,0 +1,14 @@
+---
+- hosts: apache_proxy
+  roles:
+  - yum
+
+- hosts: apache_proxy
+  tasks:
+  - name: yum clean
+    yum: name='*' update_cache=yes
+
+- hosts: apache_proxy
+  roles:
+  - elk-heartbeat-6.3.2
+

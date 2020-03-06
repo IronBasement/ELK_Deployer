@@ -1,0 +1,3 @@
+---
+- import_playbook: configure_basebox.yml
+- import_playbook: MTC2_install.yml

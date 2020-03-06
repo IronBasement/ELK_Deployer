@@ -1,0 +1,75 @@
+---
+- hosts: basebox
+  tasks:
+  - name: Fix hosts file - remove old entries
+    lineinfile:
+      dest: /etc/hosts
+      regexp: "{{ item }}"
+      state: absent
+    with_items: "{{ groups['physical_servers'] }}"
+    tags:
+    - infrastructure    
+
+  - name: Fix hosts file - add new entries
+    lineinfile:
+      dest: /etc/hosts
+      line: "{{ hostvars[item].ansible_ssh_host }}\t\t{{ item }}.{{ domain }} {{ item }}"
+      regexp: "^{{ hostvars[item].ansible_ssh_host }}"
+    with_items: "{{ groups['physical_servers'] }}"
+    tags:
+    - infrastructure    
+
+  - include_role:
+      name: isectpd-stop
+    when: not cloud_hosted
+    tags:
+    - infrastructure    
+
+- hosts: target_servers
+  tasks:
+  - include_role:
+      name: nails-stop
+    when: not cloud_hosted
+    tags:
+    - infrastructure    
+
+  - include_role:
+      name: isectpd-stop
+    when: not cloud_hosted
+    tags:
+    - infrastructure    
+
+  - include_role:
+      name: yum
+    tags:
+    - infrastructure      
+  
+  - include_role:
+      name: base-packages
+    tags:
+    - infrastructure          
+
+  - include_role:
+      name: config-deployment-env
+    tags:
+    - infrastructure      
+
+  - include_role:
+      name: fix-resolv-conf
+    when: not cloud_hosted
+    tags:
+    - infrastructure    
+
+  - include_role:
+      name: yum-update
+    tags:
+    - infrastructure
+
+
+- import_playbook: elk_install.yml
+
+- import_playbook: elk-metricbeat_install.yml
+
+- import_playbook: elk-filebeat_install.yml
+
+- import_playbook: elk-heartbeat_install.yml

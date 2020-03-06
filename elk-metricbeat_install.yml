@@ -1,0 +1,18 @@
+---
+- hosts: elk, target_servers
+  roles:
+  - yum
+
+- hosts: elk, target_servers
+  tasks:
+  - name: yum clean
+    yum: name='*' update_cache=yes
+
+- hosts: elk, target_servers
+  roles:
+  - elk-metricbeat-6.3.2
+
+- hosts: logstash_kibana
+  tasks:
+  - name: "Import Metricbeat Dashboards"
+    command: "/bin/metricbeat setup --dashboards"

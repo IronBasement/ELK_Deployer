@@ -1,0 +1,782 @@
+---
+- hosts: postgres
+  roles:
+  - edb
+  - postgis
+  tags:
+  - infrastructure
+  - edb
+
+- hosts: nrl_chart_server, opt_svcs, opt_ui, owf_web, ctm, data, map, opendj, openam, message, elk, cjmtk_webadaptor
+  roles:
+  - openjdk
+  tags:
+  - infrastructure
+  - java
+
+- hosts: all
+  roles:
+  - fix-NM
+  - dod-certs
+  - elk-beats-certs
+  tags:
+  - infrastructure
+  - certs
+
+- hosts: opendj
+  roles:
+  - opendj
+  tags:
+  - infrastructure
+  - opendj
+
+- hosts: nrl_chart_server, opt_svcs, opt_ui, owf_web, ctm, data, map, openam, cjmtk_webadaptor
+  roles:
+  - jboss-7.1.x-install
+  - jboss-7.1.x-stig
+  tags:
+  - infrastructure
+  - jboss
+
+- hosts: data
+  roles:
+  - jboss-7.x-module-postgresql
+  tags:
+  - infrastructure
+  - jboss
+
+- hosts: apache_proxy, openam
+  roles:
+  - httpd-2.6.x-install
+  tags:
+  - infrastructure
+  - httpd
+
+- hosts: message
+  roles:
+  - activemq
+  tags:
+  - infrastructure
+  - activemq
+
+- hosts: physical_servers
+  roles:
+  - fix-resolv-conf
+  - ntp
+  tags:
+  - infrastructure
+  - dns
+  - ntp
+
+- name: "Install NRL Chart Server"
+  hosts: nrl_chart_server
+  gather_facts: no
+  tasks:
+    - name: "Install NRL Chart Server"
+      block: 
+        - include_role:
+            name: nrl-chart-server
+          tags:
+            - nrl  
+      rescue:
+        - debug:
+            msg: "I caught an error during nrl_chart_server.yml"
+
+- name: "Install OWF-DB"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install OWF-DB"
+      block: 
+        - include_role:
+            name: owf-db
+          tags:
+            - owf            
+      rescue:
+        - debug:
+            msg: "I caught an error during owf-db.yml"
+
+- name: "Install ctm-postgres-config"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install ctm-postgres-config"
+      block: 
+        - include_role:
+            name: ctm-postgres-config
+          tags:
+            - ctm            
+      rescue:
+        - debug:
+            msg: "I caught an error during ctm-postgres-config.yml"
+
+- name: "Install webmap-data-service-configuration"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install webmap-data-service-configuration"
+      block: 
+        - include_role:
+            name: webmap-data-service-configuration
+          tags:
+            - webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during webmap-data-service-configuration.yml"
+
+- name: "Install alert-data-service-configuration"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install alert-data-service-configuration"
+      block: 
+        - include_role:
+            name: alert-data-service-configuration
+          tags:
+            - ctm
+            - mtc2           
+      rescue:
+        - debug:
+            msg: "I caught an error during alert-data-service-configuration.yml"
+
+- name: "Install opt-config-postgres"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install opt-config-postgres"
+      block: 
+        - include_role:
+            name: opt-config-postgres
+          tags:
+            - opt            
+      rescue:
+        - debug:
+            msg: "I caught an error during opt-config-postgres.yml"
+
+- name: "Install gfmdi-20-db"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install gfmdi-20-db"
+      block: 
+        - include_role:
+            name: gfmdi-20-db
+          tags:
+            - gfmdi            
+      rescue:
+        - debug:
+            msg: "I caught an error during gfmdi-20-db.yml"
+
+- name: "Install gfmdi-allocations-db"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install gfmdi-allocations-db"
+      block: 
+        - include_role:
+            name: gfmdi-allocations-db
+          tags:
+            - gfmdi            
+      rescue:
+        - debug:
+            msg: "I caught an error during gfmdi-allocations-db.yml"
+
+- name: "Install force-service-db"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install force-service-db"
+      block: 
+        - include_role:
+            name: force-service-db
+          tags:
+            - force-service            
+      rescue:
+        - debug:
+            msg: "I caught an error during force-service-db.yml"
+
+- name: "Install force-service-20-db"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "Install force-service-20-db"
+      block: 
+        - include_role:
+            name: force-service-20-db
+          tags:
+            - force-service            
+      rescue:
+        - debug:
+            msg: "I caught an error during force-service-20-db.yml"
+
+- name: "Install owf-web"
+  hosts: owf_web
+  gather_facts: no
+  tasks:
+    - name: "Install owf-web"
+      block: 
+        - include_role:
+            name: owf-web
+          tags:
+            - owf            
+      rescue:
+        - debug:
+            msg: "I caught an error during owf-web.yml"
+
+- name: "Install gfmdi-20"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Install gfmdi-20"
+      block: 
+        - include_role:
+            name: gfmdi-20
+          tags:
+            - gfmdi            
+      rescue:
+        - debug:
+            msg: "I caught an error during gfmdi-20.yml"
+
+- name: "Install force-service"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Install force-service"
+      block: 
+        - include_role:
+            name: force-service
+          tags:
+            - force-service            
+      rescue:
+        - debug:
+            msg: "I caught an error during force-service.yml"
+
+- name: "Install force-service-20"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Install force-service-20"
+      block: 
+        - include_role:
+            name: force-service-20
+          tags:
+            - force-service            
+      rescue:
+        - debug:
+            msg: "I caught an error during force-service-20.yml"
+
+- name: "Install gfmdi-allocations"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Install gfmdi-allocations"
+      block: 
+        - include_role:
+            name: gfmdi-allocations
+          tags:
+            - gfmdi            
+      rescue:
+        - debug:
+            msg: "I caught an error during gfmdi-allocations.yml"
+
+- name: "Stage OPT Artifacts"
+  hosts: opt_svcs, opt_ui
+  gather_facts: no
+  tasks:
+    - name: "Stage OPT Artifacts"
+      block: 
+        - include_role:
+            name: artifacts-mtc2
+          vars:
+            component_name: "opt"
+          tags:
+            - opt            
+      rescue:
+        - debug:
+            msg: "I caught an error during artifacts-mtc2-opt.yml"
+                                                
+- name: "Install opt-svcs"
+  hosts: opt_svcs
+  gather_facts: no
+  tasks:
+    - name: "Install opt-svcs"
+      block: 
+        - include_role:
+            name: opt-svcs
+          tags:
+            - opt            
+      rescue:
+        - debug:
+            msg: "I caught an error during opt-svcs.yml"
+
+- name: "Install opt-ui"
+  hosts: opt_ui
+  gather_facts: no
+  tasks:
+    - name: "Install opt-ui"
+      block: 
+        - include_role:
+            name: opt-ui
+          tags:
+            - opt            
+      rescue:
+        - debug:
+            msg: "I caught an error during opt-ui.yml"
+
+- name: "Install navy-scheduling"
+  hosts: opt_ui
+  gather_facts: no
+  tasks:
+    - name: "Install navy-scheduling"
+      block: 
+        - include_role:
+            name: navy-scheduling
+          tags:
+            - navy-scheduling            
+      rescue:
+        - debug:
+            msg: "I caught an error during navy-scheduling.yml"
+
+- name: "Stage CTM Artifacts"
+  hosts: ctm
+  gather_facts: no
+  tasks:
+    - name: "Stage CTM Artifacts"
+      block: 
+        - include_role:
+            name: artifacts-mtc2
+          vars:
+            component_name: "common_track_manager"
+          tags:
+            - ctm            
+      rescue:
+        - debug:
+            msg: "I caught an error during artifacts-mtc2-ctm.yml"
+
+- name: "Install CTM"
+  hosts: ctm
+  gather_facts: no
+  tasks:
+    - name: "Install CTM"
+      block: 
+        - include_role:
+            name: ctm-app
+        - include_role:
+            name: ctm-jboss-config
+        - include_role:
+            name: ctm-zone-core-config
+        - include_role:
+            name: ctm-demo-data
+          tags:
+            - ctm                                                
+      rescue:
+        - debug:
+            msg: "I caught an error during CTM.yml"
+                                    
+- name: "Install cjmtk-common"
+  hosts: cjmtk_server, cjmtk_webadaptor, cjmtk_portal, cjmtk_geoevent
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-common"
+      block: 
+        - include_role:
+            name: cjmtk-common
+          tags:
+            - cjmtk                     
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-common.yml"
+
+- name: "Install cjmtk-arcgisserver"
+  hosts: cjmtk_server, cjmtk_geoevent
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-arcgisserver"
+      block: 
+        - include_role:
+            name: cjmtk-arcgisserver
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-arcgisserver.yml"
+
+- name: "Install cjmtk-geoevent"
+  hosts: cjmtk_geoevent
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-geoevent"
+      block: 
+        - include_role:
+            name: cjmtk-geoevent
+          when: "cjmtk_version is version('10.6.1', '>=')"
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-geoevent.yml"
+
+- name: "Install cjmtk-portal"
+  hosts: cjmtk_portal
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-portal"
+      block: 
+        - include_role:
+            name: cjmtk-portal
+          when: "cjmtk_version is version('10.6.1', '>=')"
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-portal.yml"
+
+- name: "Install opt-config-arcgis"
+  hosts: cjmtk_server
+  gather_facts: yes
+  tasks:
+    - name: "Install opt-config-arcgis"
+      block: 
+        - include_role:
+            name: opt-config-arcgis
+        - include_role:
+            name: cjmtk-index-cleanup
+          tags:
+            - cjmtk                        
+      rescue:
+        - debug:
+            msg: "I caught an error during opt-config-arcgis.yml"
+
+- name: "Install cjmtk-webadaptor"
+  hosts: cjmtk_webadaptor
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-webadaptor"
+      block: 
+        - include_role:
+            name: cjmtk-webadaptor
+          when: "cjmtk_version is version('10.6.1', '>=')"
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-webadaptor.yml"
+
+- name: "Install cjmtk-acs-config"
+  hosts: cjmtk_portal_hosting_server, cjmtk_portal, cjmtk_geoevent
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-acs-config"
+      block: 
+        - include_role:
+            name: cjmtk-acs-config
+          when: "cjmtk_version is version('10.6.1', '>=')"
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-acs-config.yml"
+
+- name: "Install cjmtk-portal-config"
+  hosts: cjmtk_server
+  gather_facts: yes
+  tasks:
+    - name: "Install cjmtk-portal-config"
+      block: 
+        - include_role:
+            name: cjmtk-portal-config
+          when: "cjmtk_version is version('10.6.1', '>=')"
+          tags:
+            - cjmtk            
+      rescue:
+        - debug:
+            msg: "I caught an error during cjmtk-portal-config.yml"
+
+- name: "Install webmap"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install webmap"
+      block: 
+        - include_role:
+            name: webmap
+          tags:
+            - webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during webmap.yml"
+
+- name: "Install track-services-interface"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install track-services-interface"
+      block: 
+        - include_role:
+            name: track-services-interface
+          tags:
+            - map            
+      rescue:
+        - debug:
+            msg: "I caught an error during track-services-interface.yml"
+
+- name: "Install webmap-data-service"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install webmap-data-service"
+      block: 
+        - include_role:
+            name: webmap-data-service
+          tags:
+            - webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during webmap-data-service.yml"
+
+- name: "Install alert-data-service"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install alert-data-service"
+      block: 
+        - include_role:
+            name: alert-data-service
+          tags:
+            - ctm
+            - mtc2            
+      rescue:
+        - debug:
+            msg: "I caught an error during alert-data-service.yml"
+
+- name: "Install alert-service-interface"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install alert-service-interface"
+      block:
+        - include_role:
+            name: alert-service-interface
+          tags:
+            - ctm
+            - mtc2
+      rescue:
+        - debug:
+            msg: "I caught an error during alert-service-interface.yml"
+            
+- name: "Install help-center"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install help-center"
+      block: 
+        - include_role:
+            name: help-center
+          tags:
+            - webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during help-center.yml"
+
+- name: "Install tourwidget"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Install tourwidget"
+      block: 
+        - include_role:
+            name: tourwidget
+          tags:
+            - webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during tourwidget.yml"
+
+- name: "Install openam"
+  hosts: openam
+  gather_facts: no
+  tasks:
+    - name: "Install openam"
+      block: 
+        - include_role:
+            name: openam
+        - include_role:
+            name: openam-config
+        - include_role:
+            name: registration
+          tags:
+            - openam                                             
+      rescue:
+        - debug:
+            msg: "I caught an error during openam.yml"
+
+- name: "Enable httpd-login-redirect"
+  hosts: apache_proxy
+  gather_facts: no
+  tasks:
+    - name: "Install httpd-login-redirect"
+      block: 
+        - include_role:
+            name: httpd-login-redirect
+          tags:
+            - httpd-login-redirect            
+      rescue:
+        - debug:
+            msg: "I caught an error during httpd-login-redirect.yml"
+
+- name: "Enable saml-owf"
+  hosts: owf_web
+  gather_facts: no
+  tasks:
+    - name: "Enable saml-owf"
+      block: 
+        - include_role:
+            name: saml-owf
+          tags:
+            - saml-owf            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-owf.yml"
+
+- name: "Enable saml cmnsched"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Enable saml cmnsched"
+      block: 
+        - include_role:
+            name: saml-cmnsched
+        - include_role:
+            name: saml-grpsched
+          tags:
+            - saml-gfmdi            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml_cmnsched.yml"
+
+- name: "Enable saml force_2_0"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Enable saml force_2_0"
+      block:
+        - include_role:
+            name: saml-force_2_0
+          tags:
+            - saml-force_2_0
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-force_2_0.yml"
+
+- name: "Enable saml gfmdi_2_0"
+  hosts: data
+  gather_facts: no
+  tasks:
+    - name: "Enable saml gfmdi_2_0"
+      block:
+        - include_role:
+            name: saml-gfmdi_2_0
+          tags:
+            - saml-gfmdi_2_0
+      rescue:
+        - debug:
+            msg: "I caught an error during saml_gfmdi_2_0.yml"
+
+- name: "Enable saml OPT"
+  hosts: opt_ui
+  gather_facts: no
+  tasks:
+    - name: "Enable saml OPT"
+      block: 
+        - include_role:
+            name: saml-opt
+          tags:
+            - saml-opt            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-opt.yml"
+
+- name: "Enable saml NS"
+  hosts: opt_ui
+  gather_facts: no
+  tasks:
+    - name: "Enable saml NS"
+      block: 
+        - include_role:
+            name: saml-ns
+          tags:
+            - saml-ns            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-NS.yml"
+
+- name: "Enable saml CTM"
+  hosts: ctm
+  gather_facts: no
+  tasks:
+    - name: "Enable saml CTM"
+      block: 
+        - include_role:
+            name: saml-ctm
+          tags:
+            - saml-ctm            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-ctm.yml"            
+
+- name: "Enable saml webmap"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Enable saml webmap"
+      block: 
+        - include_role:
+            name: saml-webmap
+          tags:
+            - saml-webmap            
+      rescue:
+        - debug:
+            msg: "I caught an error during saml-webmap.yml" 
+
+- name: "Enable mtc2-login"
+  hosts: map
+  gather_facts: no
+  tasks:
+    - name: "Enable mtc2-login"
+      block: 
+        - include_role:
+            name: mtc2-login
+          tags:
+            - mtc2-login            
+      rescue:
+        - debug:
+            msg: "I caught an error during mtc2-login.yml" 
+
+- name: "EDB STIGS"
+  hosts: postgres
+  gather_facts: no
+  tasks:
+    - name: "EDB STIGS"
+      block: 
+        - include_role:
+            name: edb-stigs
+          tags:
+            - edb            
+      rescue:
+        - debug:
+            msg: "I caught an error during edb-stigs.yml"
+
+# We are counting on the edb STIG tasks to ultimately perform a EDB restart
+# We can use this block here to restart the JBoss
+- hosts: data, ctm, map, opt_svcs, owf_web
+  roles:
+    - jboss-7.x-restart
+  tags:
+  - infrastructure    
+
+- hosts: target_servers
+  roles:
+  - nails-start
+  - isectpd-start
+  tags:
+  - infrastructure
