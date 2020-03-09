@@ -1,0 +1,4 @@
+heartbeat_version: "6.3.2"
+
+heartbeat_home: "/usr/share/heartbeat"
+heartbeat_conf_home: "/etc/heartbeat"

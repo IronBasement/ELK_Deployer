@@ -1,0 +1,11 @@
+---
+- name: "Load template for Kibana config file"
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: "{{ kibana_group }}"
+    mode: 0770
+  tags:
+    - test_template
+

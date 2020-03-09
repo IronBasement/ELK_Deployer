@@ -1,0 +1,89 @@
+---
+- name: "Check if metricbeat index pattern exists"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/_find?type=index-pattern&search_fields=title&search=metricbeat
+    return_content: yes
+    method: GET
+    headers:
+      kbn-xsrf: kibana
+  register: "metricbeat_check"
+
+- name: "Check if filebeat index pattern exists"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/_find?type=index-pattern&search_fields=title&search=filebeat
+    return_content: yes
+    method: GET
+    headers:
+      kbn-xsrf: kibana
+  register: filebeat_check
+
+- name: "Check if heartbeat index pattern exists"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/_find?type=index-pattern&search_fields=title&search=heartbeat
+    return_content: yes
+    method: GET
+    headers:
+      kbn-xsrf: kibana
+  register: heartbeat_check
+
+- name: "Check if jboss index pattern exists"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/_find?type=index-pattern&search_fields=title&search=jboss
+    return_content: yes
+    method: GET
+    headers:
+      kbn-xsrf: kibana
+  register: jboss_check
+
+- name: "Delete index patterns"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/index-pattern/{{ item }}-*
+    method: DELETE
+    headers:
+      kbn-xsrf: kibana
+  when: "'{{ item }}' in {{ item }}_check.content"
+  loop:
+    - metricbeat
+    - filebeat
+    - heartbeat
+    - jboss
+
+- name: "Create metricbeat/filebeat index patterns"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/index-pattern/{{ item }}
+    method: POST
+    body: { "attributes": {"title": "{{ item }}" }}
+    body_format: json
+    headers:
+      kbn-xsrf: kibana
+  loop:
+    - metricbeat-*
+    - filebeat-*
+#    - jboss-*
+
+- name: "Set colors for monitor.status field in heartbeat index pattern"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/saved_objects/index-pattern/heartbeat-*
+    method: POST
+    body: { "attributes": {"title": "heartbeat-*","fieldFormatMap":"{\"monitor.status\":{\"id\":\"color\",\"params\":{\"fieldType\":\"string\",\"colors\":[{\"range\":\"-Infinity:Infinity\",\"regex\":\"up\",\"text\":\"#00ff54\",\"background\":\"#ffffff\"},{\"range\":\"-Infinity:Infinity\",\"regex\":\"down\",\"text\":\"#ff0000\",\"background\":\"#ffffff\"}]}}}"}}
+    body_format: json
+    headers:
+      kbn-xsrf: kibana
+
+- name: "Set default index pattern"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/kibana/settings
+    method: POST
+    body: { "changes": { "defaultIndex": "metricbeat-*" } }
+    body_format: json
+    headers:
+      kbn-xsrf: kibana
+
+- name: "Load JBOSS index pattern"
+  uri:
+    url: http://{{ kibana_host }}:{{ kibana_port }}/api/kibana/dashboards/import?
+    method: POST
+    body: { "objects": [ {"id":"jboss-*","type":"index-pattern","updated_at":"2019-10-29T17:45:37.266Z","version":2,"attributes":{"title":"jboss-*","fields":"[{\"name\":\"@timestamp\",\"type\":\"date\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"@version\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"@version.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"_id\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_index\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"_score\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_source\",\"type\":\"_source\",\"count\":0,\"scripted\":false,\"searchable\":false,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"_type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":false},{\"name\":\"beat.hostname\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"beat.hostname.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"beat.name\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"beat.name.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"beat.version\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"beat.version.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"host.name\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"host.name.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"input.type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"input.type.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"log_level\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"log_level.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"message\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"message.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"offset\",\"type\":\"number\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"prospector.type\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"prospector.type.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"short_message\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"short_message.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"source\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"source.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"tags\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"tags.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true},{\"name\":\"timestamp\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":false,\"readFromDocValues\":false},{\"name\":\"timestamp.keyword\",\"type\":\"string\",\"count\":0,\"scripted\":false,\"searchable\":true,\"aggregatable\":true,\"readFromDocValues\":true}]"},"migrationVersion":{"index-pattern":"6.5.0"}} ] }
+    body_format: json
+    headers:
+      kbn-xsrf: kibana

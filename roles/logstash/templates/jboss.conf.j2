@@ -1,0 +1,45 @@
+input {
+  beats {
+    port => {{ logstash_port }}
+    client_inactivity_timeout => 600
+  }
+}
+
+filter {
+  if "beats_input_codec_plain_applied" in [tags] {
+    mutate {
+      remove_tag => ["beats_input_codec_plain_applied"]
+    }
+  }
+
+  if "jboss" in [tags] {
+    grok {
+      match => {
+        "message" => '%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:log_level} %{GREEDYDATA:short_message}'
+      }
+    }
+
+  } else {
+    grok {
+      match => {
+        "message" => '%{GREEDYDATA:full_message}'
+      }
+    }
+  }
+
+#date {
+#    match => [ "timestamp", "dd/MMM/YYYY:HH:mm:ss Z" ]
+#    locale => en
+#    remove_field => "timestamp"
+#}
+
+
+}
+
+output {
+  elasticsearch {
+    hosts => ["{{ elasticsearch_host }}:{{ elasticsearch_port_rest_http }}"]
+    manage_template => false
+    index => "jboss-%{+YYYY.MM.dd}"
+  }
+}

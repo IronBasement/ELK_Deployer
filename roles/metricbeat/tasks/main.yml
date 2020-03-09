@@ -1,0 +1,66 @@
+---
+- name: "Check if Metricbeat service exists"
+  stat:
+    path: /usr/lib/systemd/system/metricbeat.service
+  register: metricbeat_service
+
+- name: "Ensure Metricbeat Service is stopped/disabled if it exists"
+  systemd:
+    name: metricbeat
+    state: stopped
+    enabled: no
+  when: metricbeat_service.stat.exists 
+
+- name: "Install Metricbeat Package ({{ metricbeat_version }})"
+  yum: 
+    name: "metricbeat-{{ metricbeat_version }}"
+    update_cache: yes
+
+- name: "Load template for Metricbeat config file"
+  template:
+    src: metricbeat.yml.j2
+    dest: "{{ metricbeat_conf_home }}/metricbeat.yml"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: "Wipe undesired defaults"
+  file:
+    path: "{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - "{{ metricbeat_conf_modules }}"
+    - "{{ metricbeat_kibana_dashboards_dir }}"
+
+- name: "Recreate config directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0600
+    recurse: yes
+  with_items:
+    - "{{ metricbeat_conf_modules }}"
+    - "{{ metricbeat_kibana_dashboards_dir }}"
+
+# TODO: tweak existing config and add more modules.d files or dashboard files per IA and developer reqs
+- name: "Load config files for Metricbeat (files)"
+  copy:
+    src: "{{ item.source }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0600
+  become: true
+  with_items:
+    - { source: "{{ metricbeat_conf_modules_subdir }}/system.yml", dest: "{{ metricbeat_conf_modules }}/system.yml" }
+    - { source: "{{ metricbeat_kibana_dashboards_subdir }}/Metricbeat-host-overview.json", dest: "{{ metricbeat_kibana_dashboards_dir }}/Metricbeat-host-overview.json" }
+    - { source: "{{ metricbeat_kibana_dashboards_subdir }}/Metricbeat-system-overview.json", dest: "{{ metricbeat_kibana_dashboards_dir }}/Metricbeat-system-overview.json" }
+
+- name: "Start Metricbeat service"
+  systemd:
+    name: metricbeat
+    state: started
+    enabled: yes

@@ -1,0 +1,77 @@
+---
+- name: "Open port for logstash"
+  firewalld:
+    port: "{{ logstash_port }}/tcp"
+    permanent: true
+    state: enabled
+
+- name: "Restart firewalld"
+  systemd:
+    name: firewalld
+    state: restarted
+
+- name: "Check if Logstash service exists"
+  stat:
+    path: /etc/systemd/system/logstash.service
+  register: logstash_service
+
+- name: "Ensure Logstash Service is stopped/disabled if it exists"
+  systemd:
+    name: logstash
+    state: stopped
+    enabled: no
+  when: logstash_service.stat.exists 
+
+- name: "Install/Update Logstash Package ({{ logstash_version }})"
+  yum: 
+    name: "logstash-{{ logstash_version }}"
+    update_cache: yes
+
+# Recent versions of Logstash seem to automatically attempt to start
+# the Logstash service once it becomes available. To avoid any
+# ingest errors we should turn it off while we configure the app.
+- name: "Ensure Logstash Service is stopped/disabled if it exists"
+  systemd:
+    name: logstash
+    state: stopped
+    enabled: no
+
+#- name: "Load template for Logstash beats input config file"
+#  template:
+#    src: 01-input-beats.conf.j2
+#    dest: /etc/logstash/conf.d/01-input-beats.conf
+#    owner: root
+#    group: "{{ logstash_group }}"
+#    mode: 0660
+#
+#- name: "Load template for Logstash syslog filter config file"
+#  template:
+#    src: 02-filter-syslog.conf.j2
+#    dest: /etc/logstash/conf.d/02-filter-syslog.conf
+#    owner: root
+#    group: "{{ logstash_group }}"
+#    mode: 0660
+#
+
+#- name: "Load template for Logstash elasticsearch output config file"
+#  template:
+#    src: 99-elasticsearch-output.conf.j2
+#    dest: /etc/logstash/conf.d/99-elasticsearch-output.conf
+#    owner: root
+#    group: "{{ logstash_group }}"
+#    mode: 0660
+
+- name: "Load template for Logstash elasticsearch output config file (jboss)"
+  template:
+    src: jboss.conf.j2
+    dest: /etc/logstash/conf.d/jboss.conf
+    owner: root
+    group: "{{ logstash_group }}"
+    mode: 0660
+
+- name: "Start Logstash service"
+  systemd:
+    name: logstash
+    state: restarted
+    enabled: yes 
+    daemon_reload: yes

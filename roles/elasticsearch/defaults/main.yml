@@ -1,0 +1,4 @@
+elasticsearch_version: "6.3.2"
+
+elasticsearch_home: "/usr/share/elasticsearch"
+elasticsearch_conf_home: "/etc/elasticsearch"

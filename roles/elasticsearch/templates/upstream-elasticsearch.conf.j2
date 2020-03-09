@@ -1,0 +1,4 @@
+upstream elasticsearch-upstream {
+    server 127.0.0.1:{{ elasticsearch_port_rest_http }};
+    keepalive 64;
+}

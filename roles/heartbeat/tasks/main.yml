@@ -1,0 +1,31 @@
+---
+- name: "Check if Heartbeat service exists"
+  stat:
+    path: /usr/lib/systemd/system/heartbeat-elastic.service
+  register: heartbeat_service
+
+- name: "Ensure Heartbeat Service is stopped/disabled if it exists"
+  systemd:
+    name: heartbeat-elastic
+    state: stopped
+    enabled: no
+  when: heartbeat_service.stat.exists 
+
+- name: "Install Heartbeat Package ({{ heartbeat_version }})"
+  yum: 
+    name: "heartbeat-elastic-{{ heartbeat_version }}"
+    update_cache: yes
+
+- name: "Load template for Heartbeat config file"
+  template:
+    src: heartbeat.yml.j2
+    dest: "{{ heartbeat_conf_home }}/heartbeat.yml"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: "Start Heartbeat service"
+  systemd:
+    name: heartbeat-elastic
+    state: started
+    enabled: yes

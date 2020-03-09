@@ -1,0 +1,79 @@
+---
+- name: "Open port for kibana"
+  firewalld:
+    port: "{{ kibana_port }}/tcp"
+    permanent: true
+    state: enabled
+
+- name: "Restart firewalld"
+  systemd:
+    name: firewalld
+    state: restarted
+
+- name: "Check if Kibana service exists"
+  stat:
+    path: /etc/systemd/system/kibana.service
+  register: kibana_service
+
+- name: "Ensure Kibana Service is stopped/disabled if it exists"
+  systemd:
+    name: kibana
+    state: stopped
+    enabled: no
+  when: kibana_service.stat.exists
+
+- name: "Install java"
+  yum:
+    name: "java"
+    update_cache: yes
+
+- name: "Install/Update Kibana Package ({{ kibana_version }})"
+  yum: 
+    name: "kibana-{{ kibana_version }}" 
+    update_cache: yes
+
+- name: "Ensure Kibana Service is stopped/disabled if it exists"
+  systemd:
+    name: kibana
+    state: stopped
+    enabled: no
+
+- name: "Load template for Kibana config file"
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: "{{ kibana_group }}"
+    mode: 0770
+
+- name: "Make log dir"
+  file:
+    path: /var/log/kibana
+    owner: "{{ kibana_user }}"
+    group: "{{ kibana_group }}"
+    mode: 0770
+    state: directory
+    recurse: true
+
+- name: "Make log file"
+  file:
+    path: /var/log/kibana/kibana.log
+    owner: "{{ kibana_user }}"
+    group: "{{ kibana_group }}"
+    mode: 0770
+    state: touch
+
+- name: "Ensure Kibana Service is started"
+  systemd:
+    name: kibana
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: "Ensure Kibana is up with curl attempts until success or fail after timeout (4 min total)."
+  uri:
+    url: "http://{{ hostvars[groups['logstash_kibana'][0]].ansible_ssh_host }}:{{ kibana_port }}"
+  register: task_result
+  until: task_result is succeeded
+  retries: 48
+  delay: 5

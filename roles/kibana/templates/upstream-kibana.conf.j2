@@ -1,0 +1,4 @@
+upstream kibana-upstream {
+    server 127.0.0.1:{{ kibana_port }};
+    keepalive 64;
+}

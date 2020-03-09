@@ -1,0 +1,78 @@
+---
+- name: "Check if Filebeat service exists"
+  stat:
+    path: /usr/lib/systemd/system/filebeat.service
+  register: filebeat_service
+
+- name: "Ensure Filebeat Service is stopped/disabled if it exists"
+  service:
+    name: filebeat
+    state: stopped
+    enabled: no
+  when: filebeat_service.stat.exists
+
+- name: "Install Filebeat Package ({{ filebeat_version }})"
+  yum:
+    name: "filebeat-{{ filebeat_version }}"
+    update_cache: yes
+
+- name: "Load template for Filebeat config file"
+  template:
+    src: filebeat.yml.j2
+    dest: "{{ filebeat_conf_home }}/filebeat.yml"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: "Wipe undesired defaults"
+  file:
+    path: "{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - "{{ filebeat_conf_modules }}"
+    - "{{ filebeat_kibana_dashboards_dir }}"
+
+- name: "Recreate config directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0600
+    recurse: yes
+  with_items:
+    - "{{ filebeat_conf_modules }}"
+    - "{{ filebeat_kibana_dashboards_dir }}"
+
+# TODO: tweak existing config and add more modules.d files or dashboard files per IA and developer reqs
+- name: "Load config files for Filebeat (templates)"
+  template:
+    src: "{{ item.source }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0600
+  become: true
+  when: item.enabled == true
+  with_items:
+    - { source: "{{ filebeat_conf_modules_subdir }}/system.yml.j2", dest: "{{ filebeat_conf_modules }}/system.yml", enabled: "{{ filebeat_module_system_enabled }}" }
+
+# TODO: tweak existing config and add more modules.d files or dashboard files per IA and developer reqs
+- name: "Load config files for Filebeat (files)"
+  copy:
+    src: "{{ item.source }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0600
+  become: true
+  when: inventory_hostname == kibana_host_short
+  with_items:
+    - { source: "{{ filebeat_kibana_dashboards_subdir }}/Filebeat-syslog.json", dest: "{{ filebeat_kibana_dashboards_dir }}/Filebeat-syslog.json" }
+
+- name: "Start Filebeat service"
+  service:
+    name: filebeat
+    state: started
+    enabled: yes

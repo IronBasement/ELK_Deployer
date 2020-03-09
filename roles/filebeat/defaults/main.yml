@@ -1,0 +1,9 @@
+filebeat_version: "6.3.2"
+
+filebeat_home: "/usr/share/filebeat"
+filebeat_conf_home: "/etc/filebeat"
+filebeat_conf_modules_subdir: "modules.d"
+filebeat_conf_modules: "{{ filebeat_conf_home }}/{{ filebeat_conf_modules_subdir }}"
+
+filebeat_kibana_dashboards_subdir: "kibana/6/dashboard"
+filebeat_kibana_dashboards_dir: "{{ filebeat_home }}/{{ filebeat_kibana_dashboards_subdir }}"

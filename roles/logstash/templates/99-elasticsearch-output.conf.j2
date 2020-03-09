@@ -1,0 +1,13 @@
+output {
+  elasticsearch {
+    hosts => ["{{ elasticsearch_rest_https }}"]
+    ssl => true
+    user => "{{ elasticsearch_username }}"
+    password => "{{ elasticsearch_password }}"
+    cacert => "{{ cacerts_dir }}/{{ fullrootca_pem }}"
+    sniffing => true
+    manage_template => false
+    index => "%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+    document_type => "%{[@metadata][type]}"
+  }
+}

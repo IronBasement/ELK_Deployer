@@ -1,0 +1,21 @@
+location /kibana/ {
+    proxy_pass http://kibana-upstream/kibana/;
+    proxy_set_header    Host             $host;
+    proxy_set_header    X-Real-IP        $remote_addr;
+    proxy_set_header    X-Forwarded-For  $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Ssl on;
+    proxy_set_header    X-Forwarded-Proto $scheme;
+    proxy_set_header    X-Forwarded-Host $server_name;
+    add_header          X-Upstream $upstream_addr;
+    proxy_ssl_server_name on;
+
+    # FIXME: It seems to be Kibana that triggers an additional basic auth prompt to the NGINX in front of Elasticsearch
+    #        so we should revisit this implementation so it's more robust.
+    #        In the meantime we are filling the auth info into the Authorization header ahead of time for a seamless
+    #        user experience.
+    proxy_set_header Authorization "Basic {{ elasticsearch_auth | b64encode }}";
+    proxy_pass_header Authorization;
+
+    auth_basic "Restricted";
+    auth_basic_user_file {{ nginx_conf_home }}/.login-log1;
+}

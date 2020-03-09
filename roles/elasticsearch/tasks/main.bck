@@ -1,0 +1,112 @@
+---
+- name: "Check if Elasticsearch service exists"
+  stat:
+    path: /usr/lib/systemd/system/elasticsearch.service
+  register: elasticsearch_service
+
+- name: "Ensure Elasticsearch service is stopped/disabled if it exists"
+  systemd:
+    name: elasticsearch
+    state: stopped
+    enabled: no
+  when: elasticsearch_service.stat.exists
+
+- name: "Install/Update Elasticsearch Package ({{ elasticsearch_version }})"
+  yum: 
+    name: "elasticsearch-{{ elasticsearch_version }}"
+    update_cache: yes
+
+- name: "Ensure Elasticsearch service is stopped/disabled if it exists"
+  systemd:
+    name: elasticsearch
+    state: stopped
+    enabled: no
+
+- name: "Load template for Elasticsearch sysconfig file"
+  template:
+    src: elasticsearch.j2
+    dest: /etc/sysconfig/elasticsearch
+    owner: root
+    group: "{{ elasticsearch_group }}"
+    mode: 0660
+
+- name: "Load template for Elasticsearch config file"
+  template:
+    src: elasticsearch.yml.j2
+    dest: "{{ elasticsearch_conf_home }}/elasticsearch.yml"
+    owner: root
+    group: "{{ elasticsearch_group }}"
+    mode: 0660
+
+- name: "Load template for Elasticsearch NGINX conf (upstream)"
+  template:
+    src: upstream-elasticsearch.conf.j2
+    dest: "{{ nginx_proxy_upstreams_path }}/upstream-elasticsearch.conf"
+    owner: root
+    group: "{{ nginx_group }}"
+    mode: 0660
+
+- name: "Load template for Elasticsearch NGINX conf (location)"
+  template:
+    src: location-elasticsearch.conf.j2
+    dest: "{{ nginx_proxy_locations_path }}/location-elasticsearch.conf"
+    owner: root
+    group: "{{ nginx_group }}"
+    mode: 0660
+
+- name: "Absolutely ensure port to Elasticsearch from external services is closed if it isn't already"
+  firewalld:
+    port: "{{ elasticsearch_port_rest_http }}/tcp"
+    permanent: true
+    state: disabled
+
+- name: "Restart firewalld"
+  systemd:
+    name: firewalld
+    state: restarted
+
+- name: "Start Elasticsearch service"
+  systemd:
+    name: elasticsearch
+    daemon_reload: yes
+    state: restarted
+    enabled: yes
+
+- name: "Stage Elasticsearch Ingest Geoip Plugin"
+  include_role:
+    name: artifacts-mtc2
+  vars:
+    component_name: "elasticsearch_plugins"
+
+- name: "Check installed Elasticsearch plugins"
+  command: "{{ elasticsearch_home }}/bin/elasticsearch-plugin list"
+  become: yes
+  register: elasticsearch_plugins_installed
+
+- name: "List installed Elasticsearch plugins"
+  debug:
+    msg: "Installed plugins: {{ elasticsearch_plugins_installed.stdout }}"
+
+- name: "Cleanup currently installed Elasticsearch plugins"
+  command: "{{ elasticsearch_home }}/bin/elasticsearch-plugin remove {{ item }}"
+  become: yes
+  when: item in elasticsearch_plugins_installed.stdout
+  with_items:
+    - ingest-geoip
+
+- name: "Install Elasticsearch Plugins"
+  command: "{{ elasticsearch_home }}/bin/elasticsearch-plugin install --batch file:///opt/tmp/{{ item }}.zip"
+  become: yes
+  with_items:
+    - ingest-geoip
+
+- name: "Cleanup"
+  file:
+    path: "/opt/tmp"
+    state: absent
+
+- name: "Ensure Nginx Service is started"
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
