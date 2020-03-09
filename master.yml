@@ -1,0 +1,25 @@
+---
+- hosts: logstash_kibana
+  tasks:
+
+  - include_role:
+      name: elk-elasticsearch-6.3.2
+
+  - include_role:
+      name:  elk-logstash-6.3.2
+
+  - include_role:
+      name: elk-kibana-6.3.2
+
+  - include_role:
+      name: elk-index-patterns
+      
+
+
+#curl -POST "http://aws-a-log1:5601/api/kibana/settings" -H "Content-Type: application/json" -H "kbn-xsrf: true" -d '{"changes": { "defaultIndex": "filebeat-*"}}'
+
+#curl -X GET "http://mtc2-sysmon:5601/api/saved_objects/dashboard/b0d82da0-8e0c-11e9-a7bd-1b8a2a5c37fd" -H 'kbn-xsrf: true'
+
+  
+
+#curl -X GET "http://mtc2-sysmon:5601/api/saved_objects/dashboard/b0d82da0-8e0c-11e9-a7bd-1b8a2a5c37fd" -H 'kbn-xsrf: true'
